@@ -1,0 +1,41 @@
+{% if request.user.is_authenticated %}
+
+    {% for item in items %}
+
+        {{ item.quantity }}
+        {{ item.product.name }} <br />
+        {{ item.status.name }} <br />
+        {{ item.date_added }} <br />
+        total: {{ item.get_total }}
+        <a href="{% url 'store:remove_from_cart' item.id %}">remove from cart</a>
+        <br />
+        <br />
+
+    {% endfor %}
+
+    Cart Number Is: {{ order.get_cart_items }} <br />
+    Cart Total Is: {{ order.get_cart_total }} <br />
+
+    <a href="{% url 'store:checkout' %}">proceed to checkout</a>
+
+{% else %}
+
+    {% for item in items %}
+        
+        {{ item.quantity }}
+        {{ item.name }} <br />
+        {% comment %} {{ item.status.name }} <br />
+        {{ item.date_added }} <br /> {% endcomment %}
+        {% comment %} total: {{ item.get_total }} {% endcomment %}
+        <a href="{% url 'store:remove_from_cart' item.id %}">remove from cart</a>
+        <br />
+        <br />
+
+    {% endfor %}
+
+    Cart Number Is: {{ order.get_cart_items }} <br />
+    Cart Total Is: {{ order.get_cart_total }} <br />
+
+    <a href="{% url 'store:checkout' %}">proceed to checkout</a>
+
+{% endif %}

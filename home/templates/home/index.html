@@ -1,0 +1,59 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    {% comment %} {% if request.user.is_authenticated %} {% endcomment %}
+    
+        <nav>
+            <ul>
+                <li>
+                    <a href="{% url 'store:cart'%}">حقيبة التسوق</a>
+                </li>
+                <li>
+                    <a href="{% url 'store:profile'%}">{{ request.user.username }}</a>
+                </li>
+                <li>
+                    <a href="{% url 'store:contact'%}">تواصل معنا</a>
+                </li>
+                <li>
+                    <a href="{% url 'store:products'%}">المنتجات</a>
+                </li>
+            </ul>
+        </nav>
+
+        <h1>{{ test }}</h1>
+
+        {% for product in products %}
+            {{ product.name }}
+            <br />
+            <img src="static/images/{{product.imageUrl}}" style="width: 300px">
+            {% comment %} <form method="post" action="{% url 'home:add_to_cart' %}">
+                <input type="submit" value="Add To Cart" name="add_to_cart" />
+            </form> {% endcomment %}
+            {% if product.quantity > 3 %}
+                <a href="{% url 'store:add_to_cart' product.id %}">Add To Cart</a>
+            {% elif product.quantity <= 3 and product.quantity > 0 %}
+                <a href="{% url 'store:add_to_cart' product.id %}">Add To Cart</a>
+                <p>only {{ product.quantity }} left!</p>
+            {% else %}
+                <p>Out Of Stock</p>
+            {% endif %}
+            <br />
+            <br />
+            <br />
+        {% endfor %}
+        
+        <a href="{% url 'store:logout' %}">Logout</a>
+    
+    {% comment %} {% else %}
+        <a href="{% url 'store:login' %}">Login</a>
+        <a href="{% url 'store:signup' %}">Signup</a>
+    {% endif %} {% endcomment %}
+</body>
+</html>

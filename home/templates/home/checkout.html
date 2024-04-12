@@ -1,0 +1,35 @@
+<h2>address</h2>
+<h1>{{ test }}</h1>
+{% if addresses %}
+    {% for address in addresses %}
+        <input type="radio" name="address" value="{{ address.address }}">
+        <label>{{ address.address }}</label>
+        <a href="{% url 'store:edit_address' address.id %}">edit</a>
+        <br>
+    {% endfor %}
+    <a href="{% url 'store:add_address' %}">Add new address</a>
+{% else %}
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="confirm address" />
+    </form>
+{% endif %}
+
+<h2>delivery</h2>
+{% for item in items %}
+
+    {{ item.quantity }}
+    {{ item.product.name }} <br />
+    {{ item.date_added }} <br />
+    total: {{ item.get_total }}
+    <a href="{% url 'store:remove_from_cart' item.id %}">remove from cart</a>
+    <br />
+    <br />
+{% endfor %}
+
+Cart Number Is: {{ order.get_cart_items }} <br />
+Cart Total Is: {{ order.get_cart_total }} <br />
+
+<br />
+<a href="{% url 'store:purchase' %}">purchase</a>

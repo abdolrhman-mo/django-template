@@ -1,0 +1,33 @@
+<h1>{{ request.user.username }}</h1>
+<h2>ordered</h2>
+{% for order in ordered %}
+    {{ order.quantity }}
+    {{ order.product.name }} <br />
+    purchased: {{ order.date_added }} <br />
+    total: {{ order.get_total }}
+    {% comment %} <a href="{% url 'store:cancel_order' order.id %}">cancel order</a> {% endcomment %}
+    <br />
+    <br />
+{% endfor %}
+
+<h2>not yet dispatched</h2>
+{% for order in not_dispatched %}
+    {{ order.quantity }}
+    {{ order.product.name }} <br />
+    purchased: {{ order.date_added }} <br />
+    total: {{ order.get_total }}
+    <a href="{% url 'store:cancel_order' order.id %}">cancel order</a>
+    <br />
+    <br />
+{% endfor %}
+
+<h2>cancelled orders</h2>
+{% for order in canceled %}
+    {{ order.quantity }}
+    {{ order.product.name }} <br />
+    canceled: {{ order.date_canceled }} <br />
+    total: {{ order.get_total }}
+    {% comment %} <a href="{% url 'store:cancel_order' order.id %}">cancel order</a> {% endcomment %}
+    <br />
+    <br />
+{% endfor %}
