@@ -4,7 +4,10 @@ from django.contrib.auth import authenticate, login, logout
 from .forms import SignupForm, LoginForm, AddressForm
 from django.http import HttpResponseRedirect
 from datetime import datetime
-
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+from .serializers import ProductSerializer
+from django.views import View
 
 def displaySessionCartItems(request):
     if "cart_items" not in request.session:
@@ -46,6 +49,12 @@ def add_to_cart_fun(request, selected_product):
                     status=(Status.objects.get(name="cart")))
         order_item.save()
 
+@api_view(['GET'])
+def getProducts(request):
+    queryset = Product.objects.all()
+    serializer = ProductSerializer(queryset, many=True)
+    return Response(serializer.data)
+
 def home(request):
     # QUANTITY OF ALL PRODUCTS AFTER IMPORTS & EXPORTS
     for product in Product.objects.all():
@@ -63,7 +72,7 @@ def home(request):
         except:
             c = Customer(user=request.user)
             c.save()
-    # customer, created = Order.objects.get_or_create(customer=customer, complete=False)
+        # customer, created = Order.objects.get_or_create(customer=customer, complete=False)
         if "cart_items" in request.session:
             for cart_item_id in request.session['cart_items']:
                 add_to_cart_fun(request, Product.objects.get(id=cart_item_id))
@@ -75,7 +84,6 @@ def home(request):
     products = Product.objects.all()
     context = {
         'products': products,
-        # 'test': test,
     }
     return render(request, "home/index.html", context)
 
@@ -98,13 +106,12 @@ def cart(request):
         context = {
             'items': items,
             'order': order,
+            'items_count': items.count(),
         }
     else:
         context = displaySessionCartItems(request)
 
     return render(request, 'home/cart.html', context)
-
-unauthorized_user_checkout = False
 
 def checkout(request):
     if request.user.is_authenticated:
@@ -113,16 +120,21 @@ def checkout(request):
                                                      complete=False)
         # items = order.orderitem_set.all()
         items = order.orderitem_set.filter(status=Status.objects.get(name="cart"))
-        addresses = ShippingAddress.objects.all()
+        addresses = ShippingAddress.objects.filter(customer=Customer.objects.get(user=request.user))
     else:
         # items = []
         return redirect('store:login')
     if request.method == 'POST':
         form = AddressForm(request.POST)
         if form.is_valid():
-            address = form.cleaned_data['address']
-            a = ShippingAddress(address=address)
-            a.save()
+            new_address = ShippingAddress(governerate=form.cleaned_data['governerate'],
+                                        city=form.cleaned_data['city'],
+                                        address=form.cleaned_data['address'],
+                                        landmark=form.cleaned_data['landmark'],
+                                        notes=form.cleaned_data['notes'],
+                                        delivery_instruction=form.cleaned_data['delivery_instruction'],
+                                        customer=Customer.objects.get(user=request.user))
+            new_address.save()
 
             # return AddressForm('store:checkout')
             return HttpResponseRedirect("/checkout")
@@ -151,6 +163,32 @@ def add_address(request):
         'form': form,
     }
     return render(request, 'home/addAddress.html', context)
+
+class AddAddress(View):
+    form_class = AddressForm
+    initial = {}
+    template_name = "home/addAddress.html"
+
+    def get(self, request):
+        form = self.form_class()
+        return render(request, self.template_name, {'form': form})
+    
+    def post(self, request):
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            a = ShippingAddress(customer=Customer.objects.get(user=request.user),
+                                address=form.cleaned_data['address'], 
+                                governerate=form.cleaned_data['governerate'], 
+                                city=form.cleaned_data['city'])
+            a.save()
+            return HttpResponseRedirect("/checkout")
+        
+        return render(request, self.template_name, {'form': form})
+    
+class RemoveAddress(View):
+    def get(self, request, address_id):
+        ShippingAddress.objects.get(id=address_id).delete()
+        return HttpResponseRedirect(f"/checkout")
 
 def edit_address(request, address_id):
     if request.method == 'POST':

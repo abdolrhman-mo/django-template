@@ -80,13 +80,20 @@ class OrderItem(models.Model): # order can have many order items
     
     def __str__(self):
         return "order item: " + str(self.quantity) + " " + self.product.name
-    
+
 class ShippingAddress(models.Model):
+    CHOICES = [
+        ('1', 'Home (7am-9pm, all days)'),
+        ('2', 'Office (9am-6pm, Weekdays)')
+    ]
     customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, blank=True, null=True)
     order = models.ForeignKey(Order, on_delete=models.SET_NULL, blank=True, null=True)
-    address = models.CharField(max_length=200)
     governerate = models.CharField(max_length=200)
     city = models.CharField(max_length=200)
+    address = models.CharField(max_length=200)
+    landmark = models.CharField(max_length=200, null=True)
+    notes = models.CharField(max_length=500, null=True)
+    delivery_instruction = models.CharField(choices=CHOICES, max_length=200, null=True)
     date_added = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):

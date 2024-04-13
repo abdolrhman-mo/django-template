@@ -16,7 +16,15 @@
     Cart Number Is: {{ order.get_cart_items }} <br />
     Cart Total Is: {{ order.get_cart_total }} <br />
 
-    <a href="{% url 'store:checkout' %}">proceed to checkout</a>
+    {% if items_count > 0 %}
+
+        <a href="{% url 'store:checkout' %}">proceed to checkout</a>
+
+    {% else %}
+
+        <a href="{% url 'store:home' %}">return to home page</a>
+
+    {% endif %}
 
 {% else %}
 

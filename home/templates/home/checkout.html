@@ -5,6 +5,7 @@
         <input type="radio" name="address" value="{{ address.address }}">
         <label>{{ address.address }}</label>
         <a href="{% url 'store:edit_address' address.id %}">edit</a>
+        <a href="{% url 'store:remove_address' address.id %}">remove address</a>
         <br>
     {% endfor %}
     <a href="{% url 'store:add_address' %}">Add new address</a>
