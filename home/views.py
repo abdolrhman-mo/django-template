@@ -2,12 +2,24 @@ from .models import *
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout 
 from .forms import SignupForm, LoginForm, AddressForm
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
 from datetime import datetime
-from rest_framework.response import Response
-from rest_framework.decorators import api_view
-from .serializers import ProductSerializer
 from django.views import View
+from .serializers import *
+# request and response
+from rest_framework.response import Response
+# fun based views
+from rest_framework.parsers import JSONParser
+from django.views.decorators import csrf
+from rest_framework.decorators import api_view
+# class based views
+from rest_framework.views import APIView
+from rest_framework import status
+from django.http import Http404
+from rest_framework import mixins
+from rest_framework import generics
+# viewsets based views
+from rest_framework import viewsets
 
 def displaySessionCartItems(request):
     if "cart_items" not in request.session:
@@ -49,11 +61,138 @@ def add_to_cart_fun(request, selected_product):
                     status=(Status.objects.get(name="cart")))
         order_item.save()
 
-@api_view(['GET'])
-def getProducts(request):
+def add_fav_fun(request, selected_product):
+    try:
+        FavItem.objects.get(customer=Customer.objects.get(user=request.user),
+                        product=selected_product)
+    except:    
+        FavItem(customer=Customer.objects.get(user=request.user),
+                product=selected_product).save()
+
+
+# @api_view(['GET'])
+# def getProducts(request):
+#     queryset = Product.objects.all()
+#     serializer = ProductSerializer(queryset, many=True)
+#     return Response(serializer.data)
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+class UserDetail(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+class CustomerViewSet(viewsets.ModelViewSet):
+    queryset = Customer.objects.all()
+    serializer_class = CustomerSerializer
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+# class ProductList(APIView): 
+#     def get(self, request, format=None):
+#         products = Product.objects.all() 
+#         serializer = ProductSerializer(products, many=True) # serialize a queryset
+#         return Response(serializer.data)
+    
+#     def post(self, request, format=None):
+#         serializer = ProductSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+# class ProductList(mixins.ListModelMixin,
+#                   mixins.CreateModelMixin,
+#                   generics.GenericAPIView):
+#     queryset = Product.objects.all()
+#     serializer_class = ProductSerializer
+
+#     def get(self, request):
+#         return self.list(request)
+
+#     def post(self, request):
+#         return self.create(request)
+
+class ProductList(generics.ListCreateAPIView):
     queryset = Product.objects.all()
-    serializer = ProductSerializer(queryset, many=True)
-    return Response(serializer.data)
+    serializer_class = ProductSerializer
+
+# class ProductDetail(APIView):
+#     def get_product(self, pk):
+#         try:
+#             return Product.objects.get(id=pk)
+#         except:
+#             raise Http404
+
+#     def get(self, request, pk, format=None):
+#         product = self.get_product(pk)
+#         serializer = ProductSerializer(product) # serialize a model instance
+#         return Response(serializer.data)
+    
+#     def put(self, request, pk, format=None):
+#         product = self.get_product(pk)
+#         serializer = ProductSerializer(product, data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+#     def delete(self, request, pk, format=None):
+#         product = self.get_product(pk)
+#         product.delete()
+#         return HttpResponse(status=status.HTTP_204_NO_CONTENT)
+
+# class ProductDetail(mixins.RetrieveModelMixin,
+#                     mixins.UpdateModelMixin,
+#                     mixins.DestroyModelMixin,
+#                     generics.GenericAPIView):
+#     queryset = Product.objects.all()
+#     serializer_class = ProductSerializer
+
+#     def get(self, request, pk):
+#         return self.retrieve(request, pk)
+
+#     def put(self, request, pk):
+#         return self.update(request, pk)
+
+#     def delete(self, request, pk):
+#         return self.destroy(request, pk)
+
+class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+
+class OrderViewSet(viewsets.ModelViewSet):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+
+class StatusViewSet(viewsets.ModelViewSet):
+    queryset = Status.objects.all()
+    serializer_class = StatusSerializer
+
+# class OrderItemViewSet(viewsets.ModelViewSet):
+#     queryset = OrderItem.objects.all()
+#     serializer_class = OrderItemSerializer
+
+class OrderItemList(generics.ListCreateAPIView):
+    queryset = OrderItem.objects.all()
+    serializer_class = OrderItemSerializer
+    
+    # order_items are related with the user who creates them
+    def perform_create(self, serializer):
+        serializer.save(order=Order.objects.get(user=self.request.user))
+
+class ShippingAddressViewSet(viewsets.ModelViewSet):
+    queryset = ShippingAddress.objects.all()
+    serializer_class = ShippingAddressSerializer
+
+class FavItemViewSet(viewsets.ModelViewSet):
+    queryset = FavItem.objects.all()
+    serializer_class = FavItemSerializer
 
 def home(request):
     # QUANTITY OF ALL PRODUCTS AFTER IMPORTS & EXPORTS
@@ -77,9 +216,15 @@ def home(request):
             for cart_item_id in request.session['cart_items']:
                 add_to_cart_fun(request, Product.objects.get(id=cart_item_id))
             del request.session['cart_items']
+        if "fav_items" in request.session:
+            for fav_item_id in request.session['fav_items']:
+                add_fav_fun(request, Product.objects.get(id=fav_item_id))
+            del request.session['fav_items']
     else:
         if "cart_items" not in request.session:
             request.session["cart_items"] = []
+        if "fav_items" not in request.session:
+            request.session["fav_items"] = []
 
     products = Product.objects.all()
     context = {
@@ -220,9 +365,8 @@ def remove_from_cart(request, item_id):
     if request.user.is_authenticated:
         OrderItem.objects.get(id=item_id).delete()
     else:
-        cart_items = request.session['cart_items']
         new_cart_items = []
-        for cart_item in cart_items:
+        for cart_item in request.session['cart_items']:
             if cart_item != item_id:
                 new_cart_items += [cart_item]
         request.session['cart_items'] = new_cart_items
@@ -260,6 +404,36 @@ def cancel_order(request, order_id):
     canceled_order.date_canceled = datetime.now()
     canceled_order.save()
     return redirect('store:profile')
+
+class AddFav(View):
+    def get(self, request, product_id):
+        selected_product = Product.objects.get(id=product_id)
+        if request.user.is_authenticated:
+            add_fav_fun(request, selected_product)
+        else:
+            # check if selected product in 'fav_items'
+            found = False
+            for item_id in request.session['fav_items']:
+                if item_id == selected_product.id:
+                    found = True
+                    break
+            if found == False:
+                request.session['fav_items'] += [selected_product.id]
+        return HttpResponseRedirect("/")
+
+class RemoveFav(View):
+    def get(self, request, product_id):
+        if request.user.is_authenticated:
+            FavItem.objects.get(customer=Customer.objects.get(user=request.user),
+                                product=Product.objects.get(id=product_id)).delete()
+        else:
+            new_fav_items = []
+            for fav_item in request.sessions['fav_items']:
+                if fav_item != product_id:
+                    new_fav_items += [fav_item]
+            request.sessions['fav_items'] = new_fav_items
+
+        return HttpResponseRedirect("/")
 
 def user_signup(request):
     if request.method == 'POST':

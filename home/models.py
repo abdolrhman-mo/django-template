@@ -34,11 +34,16 @@ class Category(models.Model):
         return self.name
 
 class Product(models.Model):
+    CHOICES = [
+        ('1', 'sale'),
+        ('2', 'out of stock')
+    ]
     name = models.CharField(max_length=50)
     describtion = models.CharField(max_length=250)
     quantity = models.IntegerField(null=True)
     brand_key = models.IntegerField()
-    price = models.IntegerField()
+    price1 = models.IntegerField(null=True)
+    price2 = models.IntegerField(null=True, blank=True)
     image = models.ImageField(null=True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True)
 
@@ -114,3 +119,11 @@ class ExportProduct(models.Model):
 
     def __str__(self):
         return "Export for " + self.product.name + " on " + self.date_exported.strftime('%d/%m/%y - %I:%M')
+    
+class FavItem(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.customer.user.username + " loves " + self.product.name
+    

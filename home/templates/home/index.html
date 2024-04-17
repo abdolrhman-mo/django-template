@@ -32,10 +32,12 @@
         {% for product in products %}
             {{ product.name }}
             <br />
-            <img src="static/images/{{product.imageUrl}}" style="width: 300px">
+            <img src="static/images/{{product.image}}" style="width: 300px">
             {% comment %} <form method="post" action="{% url 'home:add_to_cart' %}">
                 <input type="submit" value="Add To Cart" name="add_to_cart" />
             </form> {% endcomment %}
+            <a href="{% url 'store:add_fav' product.id %}">Add To Fav</a>
+            <a href="{% url 'store:remove_fav' product.id %}">Remove From Fav</a>
             {% if product.quantity > 3 %}
                 <a href="{% url 'store:add_to_cart' product.id %}">Add To Cart</a>
             {% elif product.quantity <= 3 and product.quantity > 0 %}
